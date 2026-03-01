@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <list>
+#include <fcntl.h>
+#include <io.h>
 
 class IComponent {
 public:
@@ -34,7 +36,7 @@ class Leaf : public IComponent {
 };
 
 
-///// General /////
+///// General Figure /////
 class Figure {
 public:    
     std::list <Figure*> li;
@@ -130,8 +132,127 @@ class Poligon : public Figure {
     }
 };
 
+
+
+
+
+///// General Math /////
+class Math {
+public:
+    std::list <Math*> li;
+    double relX = 0.33,
+        relY = 0.33,
+        relSize = 0.33;
+    int  widthLine = 3;
+    
+    virtual void add(Math* p) { li.push_back(p); }
+
+    virtual void draw(double cx, double cy, double size) {
+        double ssize = size * relSize;
+        double ccx = cx + (relX)*size;
+        double ccy = cy + (relY - 0.33) * size;
+
+        drawSelf(ccx, ccy, ssize);
+
+        if (!li.empty()) {
+            int n = li.size();
+
+            int i = 0;
+            for (auto* ch : li) {
+                ch->relX = 0.33 + (i - n / 2.0) / n;
+                ch->relY = 0.33;
+
+                if (n > 2) ch->draw(ccx, ccy, ssize * 0.33);
+                else ch->draw(ccx, ccy, ssize);
+                i++;
+            }
+        }
+    }
+
+    virtual void drawSelf(double cx, double cy, double size) = 0;
+};
+
+////// ====== //////
+class Brackets : public Math {
+public:
+    void drawSelf(double cx, double cy, double size) {
+        std::wcout << L"<text\n"
+            << L"xml:space=\"preserve\"\n"
+            << L"style=\"font-size:" << size << L"px;letter-spacing:" << size << L"px;writing-mode:lr-tb;direction:ltr;fill:#000000;\"\n"
+            << L"x=\"0\"\n"
+            << L"y=\"0\"\n"
+            << L"transform=\"scale(0.3,1)\"\n"
+            << L"id=\"text1\"><tspan\n"
+            << L"sodipodi:role=\"line\"\n"
+            << L"id=\"tspan1\"\n"
+            << L"style=\"stroke-width:3\"\n"
+            << L"stroke=\"red\"\n"
+            << L"x=\"" << cx << L"\"\n"
+            << L"y=\"" << cy << L"\">( )</tspan></text>";
+
+        std::wcout << L"<text\n"
+            << L"xml : space = \"preserve\"\n"
+            << L"style=\"font-size:" << size / 10 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#000000; stroke - width:0.\"\n"
+            << L"x=\"0\"\n"
+            << L"y=\"0\"\n"
+            << L"id=\"text2\"><tspan\n"
+            << L"x=\"" << cx - size * 1.05 << "\"\n"
+            << L"y=\"" << cy - size/2.2 << "\"\n"
+            << L"id=\"tspan7\">a₁₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₁₂&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₁₃\n"
+            << L"</tspan><tspan\n"
+            << L"x=\"" << cx - size * 1.05 << "\"\n"
+            << L"y=\"" << cy + size / 5 - size/2.2 << "\"\n"
+            << L"id=\"tspan8\">a₂₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₂₂&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₂₃\n"
+            << L"</tspan><tspan\n"
+            << L"x=\"" << cx - size * 1.05 << "\"\n"
+            << L"y=\"" << cy + size * 2 / 5 - size/2.2 << "\"\n"
+            << L"id=\"tspan9\">a₃₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₃₂&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₃₃</tspan></text>";
+    }
+};
+
+////// ====== //////
+class Integral : public Math {
+public:
+    void drawSelf(double cx, double cy, double size) {
+        std::wcout << L"<text\n"
+            << L"xml:space=\"preserve\"\n"
+            << L"style=\"font-size:" << size/5 << L"px;letter-spacing:" << size/15 << L"px;writing-mode:lr-tb;direction:ltr;fill:#000000;\"\n"
+            << L"x=\"0\"\n"
+            << L"y=\"0\"\n"
+            << L"id=\"text1\"><tspan\n"
+            << L"sodipodi:role=\"line\"\n"
+            << L"id=\"tspan1\"\n"
+            << L"x=\"" << cx << L"\"\n"
+            << L"y=\"" << cy << L"\">∫ dx</tspan></text>";
+
+    }
+};
+
+////// ====== //////
+class Devide : public Math {
+public:
+    void drawSelf(double cx, double cy, double size) {
+        std::wcout << L"<text\n"
+            << L"xml:space=\"preserve\"\n"
+            << L"style=\"font-size:20px;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;fill:#000000;\"\n"
+            << L"x=\"0\"\n"
+            << L"y=\"0\"\n"
+            << L"id=\"text1\"><tspan\n"
+            << L"sodipodi:role=\"line\"\n"
+            << L"id=\"tspan1\"\n"
+            << L"x=\"" << cx + size/1.5 << L"\"\n"
+            << L"y=\"" << cy - size/6 << L"\"\n"
+            << L"textLength=\"" << size * 0.5 << L"\"\n"
+            << L"lengthAdjust=\"spacingAndGlyphs\">-</tspan></text>";
+
+    }
+};
+
+
+
 int main()
 {
+    _setmode(_fileno(stdout), _O_U16TEXT);
     /*
     IComponent* m[7] = { new Composite, new Composite,new Composite,new Composite,new Leaf,new Leaf,new Leaf};
     m[0]->add(m[1]);
@@ -143,6 +264,8 @@ int main()
 
     m[0]->draw();*/
 
+
+    /*
     Figure* m[9] = {new Circle, new Circle, new Rect, new Rect, new Rect, new Rect, new Circle, new Circle, new Poligon};
     m[0]->add(m[2]);
     m[2]->add(m[1]);
@@ -153,7 +276,14 @@ int main()
     m[7]->add(m[6]);
     m[8]->add(m[7]);
 
-    m[8]->draw(500, 500, 2000);
+    m[8]->draw(500, 500, 2000);*/
+
+
+    Math* m[3] = { new Brackets, new Integral, new Devide};
+    m[0]->add(m[1]);
+    m[1]->add(m[2]);
+
+    m[0]->draw(700, 700, 3000);
 }
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
