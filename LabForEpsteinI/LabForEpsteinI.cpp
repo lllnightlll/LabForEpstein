@@ -1,6 +1,7 @@
 ﻿// LabForEpsteinI.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
 //
 
+#include <cstddef>
 #include <iostream>
 #include <list>
 #include <fcntl.h>
@@ -140,72 +141,66 @@ class Poligon : public Figure {
 class Math {
 public:
     std::list <Math*> li;
-    double relX = 0.33,
-        relY = 0.33,
-        relSize = 0.33;
+    double relX = 0.5,
+        relY = 0.5,
+        relSize = 0.5;
     int  widthLine = 3;
     
     virtual void add(Math* p) { li.push_back(p); }
-
-    virtual void draw(double cx, double cy, double size) {
-        double ssize = size * relSize;
-        double ccx = cx + (relX)*size;
-        double ccy = cy + (relY - 0.33) * size;
-
-        drawSelf(ccx, ccy, ssize);
-
-        if (!li.empty()) {
-            int n = li.size();
-
-            int i = 0;
-            for (auto* ch : li) {
-                ch->relX = 0.33 + (i - n / 2.0) / n;
-                ch->relY = 0.33;
-
-                if (n > 2) ch->draw(ccx, ccy, ssize * 0.33);
-                else ch->draw(ccx, ccy, ssize);
-                i++;
-            }
-        }
-    }
+    virtual void draw(double cx, double cy, double size);
 
     virtual void drawSelf(double cx, double cy, double size) = 0;
+};
+
+class Operand{
+    public:
+        Math* x1;
+        std::wstring x2;
+        Operand(Math* x) : x1(x), x2() {}
+        Operand(std::wstring x) : x1(nullptr), x2(x) {}
 };
 
 ////// ====== //////
 class Brackets : public Math {
 public:
     void drawSelf(double cx, double cy, double size) {
+        std::wcout << "<circle cx=\"" << cx
+        << "\" cy=\"" << cy
+        << "\" r=\"" << size * 0.6
+        << "\" fill=\"" << "black"
+        << "\" stroke-width=\"" << 3
+        << "\" stroke=\"rgb(0, 0, 0)\" />\n";
+
         std::wcout << L"<text\n"
             << L"xml:space=\"preserve\"\n"
-            << L"style=\"font-size:" << size << L"px;letter-spacing:" << size << L"px;writing-mode:lr-tb;direction:ltr;fill:#000000;\"\n"
+            << L"style=\"font-size:" << size << L"px;letter-spacing:" << size * 5 << L"px;writing-mode:lr-tb;direction:ltr;fill:#FFFFFF;\"\n"
             << L"x=\"0\"\n"
             << L"y=\"0\"\n"
-            << L"transform=\"scale(0.3,1)\"\n"
+            << L"transform=\"scale(0.1,1)\"\n"
             << L"id=\"text1\"><tspan\n"
             << L"sodipodi:role=\"line\"\n"
             << L"id=\"tspan1\"\n"
             << L"style=\"stroke-width:3\"\n"
             << L"stroke=\"red\"\n"
-            << L"x=\"" << cx << L"\"\n"
-            << L"y=\"" << cy << L"\">( )</tspan></text>";
+            << L"x=\"" << 10 * cx - 5.4 * size << L"\"\n"
+            << L"y=\"" << cy + size * 0.225 << L"\">( )</tspan></text>";
 
         std::wcout << L"<text\n"
             << L"xml : space = \"preserve\"\n"
-            << L"style=\"font-size:" << size / 10 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#000000; stroke - width:0.\"\n"
+            << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
             << L"x=\"0\"\n"
             << L"y=\"0\"\n"
             << L"id=\"text2\"><tspan\n"
-            << L"x=\"" << cx - size * 1.05 << "\"\n"
-            << L"y=\"" << cy - size/2.2 << "\"\n"
+            << L"x=\"" << cx - size * 0.33 << "\"\n"
+            << L"y=\"" << cy - size * 0.33 << "\"\n"
             << L"id=\"tspan7\">a₁₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₁₂&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₁₃\n"
             << L"</tspan><tspan\n"
-            << L"x=\"" << cx - size * 1.05 << "\"\n"
-            << L"y=\"" << cy + size / 5 - size/2.2 << "\"\n"
+            << L"x=\"" << cx - size * 0.33 << "\"\n"
+            << L"y=\"" << cy << "\"\n"
             << L"id=\"tspan8\">a₂₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₂₂&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₂₃\n"
             << L"</tspan><tspan\n"
-            << L"x=\"" << cx - size * 1.05 << "\"\n"
-            << L"y=\"" << cy + size * 2 / 5 - size/2.2 << "\"\n"
+            << L"x=\"" << cx - size * 0.33 << "\"\n"
+            << L"y=\"" << cy + size * 0.33 << "\"\n"
             << L"id=\"tspan9\">a₃₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₃₂&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₃₃</tspan></text>";
     }
 };
@@ -214,41 +209,131 @@ public:
 class Integral : public Math {
 public:
     void drawSelf(double cx, double cy, double size) {
+        std::wcout << "<circle cx=\"" << cx + size * 0.05
+        << "\" cy=\"" << cy
+        << "\" r=\"" << size * 0.2
+        << "\" fill=\"" << "black"
+        << "\" stroke-width=\"" << 3
+        << "\" stroke=\"rgb(0, 0, 0)\" />\n";
+
         std::wcout << L"<text\n"
             << L"xml:space=\"preserve\"\n"
-            << L"style=\"font-size:" << size/5 << L"px;letter-spacing:" << size/15 << L"px;writing-mode:lr-tb;direction:ltr;fill:#000000;\"\n"
+            << L"style=\"font-size:" << size/5 << L"px;letter-spacing:" << size/14 << L"px;writing-mode:lr-tb;direction:ltr;fill:#FFFFFF;\"\n"
             << L"x=\"0\"\n"
             << L"y=\"0\"\n"
             << L"id=\"text1\"><tspan\n"
             << L"sodipodi:role=\"line\"\n"
             << L"id=\"tspan1\"\n"
-            << L"x=\"" << cx << L"\"\n"
-            << L"y=\"" << cy << L"\">∫ dx</tspan></text>";
+            << L"x=\"" << cx - size * 0.15 << L"\"\n"
+            << L"y=\"" << cy + size * 0.05 << L"\">∫ ʣ</tspan></text>";
 
     }
 };
+
+
 
 ////// ====== //////
 class Devide : public Math {
 public:
+    Operand a{std::wstring(L"a")}, b{std::wstring(L"b")};
+
     void drawSelf(double cx, double cy, double size) {
+        std::wcout << "<circle cx=\"" << cx
+        << "\" cy=\"" << cy
+        << "\" r=\"" << size * 0.2
+        << "\" fill=\"" << "black"
+        << "\" stroke-width=\"" << 3
+        << "\" stroke=\"rgb(0, 0, 0)\" />\n";
+
         std::wcout << L"<text\n"
             << L"xml:space=\"preserve\"\n"
-            << L"style=\"font-size:20px;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;fill:#000000;\"\n"
+            << L"style=\"font-size:20px;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;fill:#FFFFFF;\"\n"
             << L"x=\"0\"\n"
             << L"y=\"0\"\n"
             << L"id=\"text1\"><tspan\n"
             << L"sodipodi:role=\"line\"\n"
             << L"id=\"tspan1\"\n"
-            << L"x=\"" << cx + size/1.5 << L"\"\n"
-            << L"y=\"" << cy - size/6 << L"\"\n"
+            << L"x=\"" << cx - size * 0.25 << L"\"\n"
+            << L"y=\"" << cy + size * 0.0025 << L"\"\n"
             << L"textLength=\"" << size * 0.5 << L"\"\n"
             << L"lengthAdjust=\"spacingAndGlyphs\">-</tspan></text>";
 
+        if(a.x1 != nullptr) {
+            if(dynamic_cast<Brackets*>(a.x1) != nullptr) a.x1->draw(cx, cy - size * 0.125, size / 3);
+            else a.x1->draw(cx - size * 0.05, cy - size * 0.11, size * 0.9);
+        }
+        
+        else {
+        std::wcout << L"<text\n"
+            << L"xml : space = \"preserve\"\n"
+            << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
+            << L"x=\"0\"\n"
+            << L"y=\"0\"\n"
+            << L"id=\"text2\"><tspan\n"
+            << L"x=\"" << cx - size * 0.05 << "\"\n"
+            << L"y=\"" << cy - size * 0.02 << "\"\n"
+            << L"id=\"tspan7\">" << a.x2 << "</tspan></text>";
+        }
+
+
+        if(b.x1 != nullptr) {
+            if(dynamic_cast<Brackets*>(a.x1) != nullptr) a.x1->draw(cx, cy + size * 0.1, size / 3);
+            else b.x1->draw(cx - size * 0.05, cy + size * 0.09, size * 0.9);
+        }
+
+        else {
+        std::wcout << L"<text\n"
+            << L"xml : space = \"preserve\"\n"
+            << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
+            << L"x=\"0\"\n"
+            << L"y=\"0\"\n"
+            << L"id=\"text2\"><tspan\n"
+            << L"x=\"" << cx - size * 0.05 << "\"\n"
+            << L"y=\"" << cy + size * 0.075 << "\"\n"
+            << L"id=\"tspan7\">" << b.x2 << "</tspan></text>";
+        }
     }
 };
 
+void Math::draw(double cx, double cy, double size) {
+        double ssize = size * relSize;
+        double ccx = cx + (relX - 0.5)*size;
+        double ccy = cy + (relY - 0.5) * size;
 
+        drawSelf(ccx, ccy, ssize);
+
+        /*if (!li.empty()) {
+            int i = 0;
+            for (auto* ch : li) {
+                ch->relX = 0.5;
+                ch->relY = 0.5;
+                 
+                if(dynamic_cast<Brackets*>(ch) != nullptr) ch->draw(ccx, ccy, ssize / 3);
+                else ch->draw(ccx, ccy, ssize);
+                i++;
+            }
+        }*/
+
+        for (auto* ch : li) {
+            ch->relX = 0.5;
+            ch->relY = 0.5;
+    
+            if (auto* d = dynamic_cast<Devide*>(ch)) {
+                auto it = d->li.begin();
+                if (it != d->li.end()) {
+                    d->a = Operand(*it);  
+                    ++it;
+                }
+                if (it != d->li.end()) {
+                    d->b = Operand(*it); 
+                    ++it;
+                } 
+                d->li.clear();   
+            }
+    
+            ch->draw(ccx, ccy, ssize);  // рекурсивный обход вниз по дереву
+        }
+    }
 
 int main()
 {
@@ -279,11 +364,22 @@ int main()
     m[8]->draw(500, 500, 2000);*/
 
 
-    Math* m[3] = { new Brackets, new Integral, new Devide};
-    m[0]->add(m[1]);
-    m[1]->add(m[2]);
+    Math* m[4] = { new Brackets, new Integral, new Devide, new Integral};
+    //m[0]->add(m[1]);
+    //m[1]->add(m[2]);
 
-    m[0]->draw(700, 700, 3000);
+    int x = 700, y = 700;
+    std::wcout << "<circle cx=\"" << x
+            << "\" cy=\"" << y
+            << "\" r=\"" << 10000
+            << "\" fill=\"" << "black"
+            << "\" stroke-width=\"" << 3
+            << "\" stroke=\"rgb(0,0,0)\" />\n";
+
+    m[1]->add(m[2]);
+    m[2]->add(m[0]);
+    m[0]->add(m[3]);
+    m[1]->draw(x, y, 3000);
 }
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
