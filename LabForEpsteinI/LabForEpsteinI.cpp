@@ -9,7 +9,6 @@
 #include <list>
 #include <string>
 
-
 class IComponent {
 public:
   virtual void add(IComponent *p) {}
@@ -152,6 +151,28 @@ public:
 ////// ====== //////
 class Brackets : public Math {
 public:
+  Operand a11 = Operand(std::wstring(L"a11")),
+          a22 = Operand(std::wstring(L"a22")),
+          a33 = Operand(std::wstring(L"a33"));
+
+  void fillOperands() {
+    auto it = li.begin();
+    if (it != li.end()) {
+      a11 = Operand(*it);
+      li.erase(it);
+    }
+    it = li.begin();
+    if (it != li.end()) {
+      a22 = Operand(*it);
+      li.erase(it);
+    }
+    it = li.begin();
+    if (it != li.end()) {
+      a33 = Operand(*it);
+      li.erase(it);
+    }
+  }
+
   void drawSelf(double cx, double cy, double size) {
     std::wcout << "<circle cx=\"" << cx << "\" cy=\"" << cy << "\" r=\""
                << size * 0.6 << "\" fill=\"" << "black"
@@ -197,6 +218,25 @@ public:
         << L"y=\"" << cy + size * 0.33 << "\"\n"
         << L"id=\"tspan9\">a₃₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a₃₂&nbsp;&nbsp;&"
            L"nbsp;&nbsp;&nbsp;a₃₃</tspan></text>";
+
+    if (a11.x1) {
+      if (dynamic_cast<Brackets *>(a11.x1) != nullptr)
+        a11.x1->draw(cx - size * 0.27, cy - size * 0.35, size / 3);
+      else
+        a11.x1->draw(cx - size * 0.27, cy - size * 0.35, size);
+    }
+    if (a22.x1) {
+      if (dynamic_cast<Brackets *>(a22.x1) != nullptr)
+        a22.x1->draw(cx - size * 0.03, cy - size * 0.03, size / 3);
+      else
+        a22.x1->draw(cx - size * 0.03, cy - size * 0.03, size);
+    }
+    if (a33.x1) {
+      if (dynamic_cast<Brackets *>(a33.x1) != nullptr)
+        a33.x1->draw(cx + size * 0.25, cy + size * 0.3, size / 3);
+      else
+        a33.x1->draw(cx + size * 0.25, cy + size * 0.3, size);
+    }
   }
 };
 
@@ -238,16 +278,19 @@ public:
       else
         a.x1->draw(cx, cy, size);
     } else {
-        std::wcout << L"<text\n"
-            << L"xml : space = \"preserve\"\n"
-            << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
-            << L"x=\"0\"\n"
-            << L"y=\"0\"\n"
-            << L"id=\"text2\"><tspan\n"
-            << L"x=\"" << cx << "\"\n"
-            << L"y=\"" << cy << "\"\n"
-            << L"id=\"tspan7\">" << a.x2 << "</tspan></text>";
-        }
+      std::wcout
+          << L"<text\n"
+          << L"xml : space = \"preserve\"\n"
+          << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0
+          << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; "
+             L"inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
+          << L"x=\"0\"\n"
+          << L"y=\"0\"\n"
+          << L"id=\"text2\"><tspan\n"
+          << L"x=\"" << cx << "\"\n"
+          << L"y=\"" << cy << "\"\n"
+          << L"id=\"tspan7\">" << a.x2 << "</tspan></text>";
+    }
   }
 };
 
@@ -258,13 +301,15 @@ public:
 
   void fillOperands() {
     auto it = li.begin();
-    if (it != li.end())
+    if (it != li.end()) {
       num = Operand(*it);
-    li.erase(it);
+      li.erase(it);
+    }
     it = li.begin();
-    if (it != li.end())
+    if (it != li.end()) {
       den = Operand(*it);
-    li.erase(it);
+      li.erase(it);
+    }
   }
 
   void drawSelf(double cx, double cy, double size) {
@@ -293,16 +338,19 @@ public:
       else
         num.x1->draw(cx - size * 0.05, cy - size * 0.1, size * 0.9);
     } else {
-        std::wcout << L"<text\n"
-            << L"xml : space = \"preserve\"\n"
-            << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
-            << L"x=\"0\"\n"
-            << L"y=\"0\"\n"
-            << L"id=\"text2\"><tspan\n"
-            << L"x=\"" << cx - size * 0.05 << "\"\n"
-            << L"y=\"" << cy - size * 0.02 << "\"\n"
-            << L"id=\"tspan7\">" << num.x2 << "</tspan></text>";
-        }
+      std::wcout
+          << L"<text\n"
+          << L"xml : space = \"preserve\"\n"
+          << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0
+          << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; "
+             L"inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
+          << L"x=\"0\"\n"
+          << L"y=\"0\"\n"
+          << L"id=\"text2\"><tspan\n"
+          << L"x=\"" << cx - size * 0.05 << "\"\n"
+          << L"y=\"" << cy - size * 0.02 << "\"\n"
+          << L"id=\"tspan7\">" << num.x2 << "</tspan></text>";
+    }
 
     if (den.x1) {
       if (dynamic_cast<Brackets *>(den.x1) != nullptr)
@@ -310,16 +358,19 @@ public:
       else
         den.x1->draw(cx - size * 0.05, cy + size * 0.09, size * 0.9);
     } else {
-        std::wcout << L"<text\n"
-            << L"xml : space = \"preserve\"\n"
-            << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0 << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
-            << L"x=\"0\"\n"
-            << L"y=\"0\"\n"
-            << L"id=\"text2\"><tspan\n"
-            << L"x=\"" << cx - size * 0.05 << "\"\n"
-            << L"y=\"" << cy + size * 0.075 << "\"\n"
-            << L"id=\"tspan7\">" << den.x2 << "</tspan></text>";
-        }
+      std::wcout
+          << L"<text\n"
+          << L"xml : space = \"preserve\"\n"
+          << L"style=\"font-size:" << size / 9 << "px;letter-spacing:" << 0
+          << L"px; writing - mode:lr - tb; direction:ltr; white - space:pre; "
+             L"inline - size:0; fill:#FFFFFF; stroke - width:0.\"\n"
+          << L"x=\"0\"\n"
+          << L"y=\"0\"\n"
+          << L"id=\"text2\"><tspan\n"
+          << L"x=\"" << cx - size * 0.05 << "\"\n"
+          << L"y=\"" << cy + size * 0.075 << "\"\n"
+          << L"id=\"tspan7\">" << den.x2 << "</tspan></text>";
+    }
   }
 };
 
@@ -395,19 +446,19 @@ int main() {
 
   m[8]->draw(500, 500, 2000);*/
 
-  Math *m[4] = {new Brackets, new Integral, new Devide, new Integral};
+  Math *m[4] = {new Brackets, new Devide, new Integral, new Brackets};
   // m[0]->add(m[1]);
   // m[1]->add(m[2]);
 
-  int x = 700, y = 700;
+  int x = 1000, y = 1000;
   std::wcout << "<circle cx=\"" << x << "\" cy=\"" << y << "\" r=\"" << 10000
              << "\" fill=\"" << "black"
              << "\" stroke-width=\"" << 3 << "\" stroke=\"rgb(0,0,0)\" />\n";
 
-  m[1]->add(m[2]);
-  m[2]->add(m[3]);
-  m[3]->add(m[0]);
-  m[1]->draw(x, y, 3000);
+  m[0]->add(m[1]);
+  m[0]->add(m[2]);
+  m[0]->add(m[3]);
+  m[0]->draw(x, y, 3000);
 }
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
