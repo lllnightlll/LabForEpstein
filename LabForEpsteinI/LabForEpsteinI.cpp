@@ -8,6 +8,9 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <fstream>
+#include <thread>
+#include <windows.h>
 
 class IComponent {
 public:
@@ -422,31 +425,114 @@ public:
 }
 }*/
 
+
+
+
+
+////// lab2 //////
+class View {
+public:
+  virtual void update(std::list<double> data, std::fstream& file) = 0;
+  virtual ~View() = default;
+};
+
+class view1 : public View {
+public:
+  void update(std::list<double> data, std::fstream& file) override {
+    file<<"<title>Expenses</title>\n<g id=\"rowGroup\" transform=\"translate(0, 0)\" role=\"table\">\n<rect x=\"25\" y=\"27\" width=\"3000\" height=\"20\" fill=\"gainsboro\"/>\n<text x=\"30\" y=\"20\" font-size=\"18px\" font-weight=\"bold\" fill=\"crimson\" text-anchor=\"middle\" role=\"row\">\n";
+    for (unsigned int i = 0; i < data.size(); i++) {
+      file<<"<tspan role=\"columnheader\" x=\""<< (i + 1) * 100 <<"\">" << (char)(i + 65) <<"</tspan>\n";
+    }
+    file<<"</text>\n<text x=\"30\" y=\"42\" font-size=\"18px\" font-weight=\"bold\" fill=\"crimson\" text-anchor=\"middle\" role=\"row\">\n";
+
+    int i = 1;
+    for (auto it = data.begin(); it != data.end(); ++it, ++i) {
+      file<<"<tspan role=\"columnheader\" x=\""<< i * 100 <<"\">" << *it <<"</tspan>\n";
+    }
+  }
+};
+
+class view2 : public View {
+public:
+  void update(std::list<double> data, std::fstream& file) override {
+    std::cout << "view2: " << data.size() << std::endl;
+  }
+};
+
+class view3 : public View {
+public:
+  void update(std::list<double> data, std::fstream& file) override {
+    std::cout << "view3: " << data.size() << std::endl;
+  }
+};
+
+class Model {
+private:
+  View* views[3];
+public:
+  Model() {
+    views[0] = new view1();
+    views[1] = new view2();
+    views[2] = new view3();
+  }
+  ~Model() {
+    delete views[0];
+    delete views[1];
+    delete views[2];
+  }
+
+  void update(std::list<double> data, std::fstream& file) {
+    file.clear();
+    file.seekp(0);
+    file<<"<!DOCTYPE html>\n<html>\n<head>\n<title>SVG-графика</title>\n</head>\n<body><svg width=\"10000\" height=\"10000\">"<<std::endl;
+    for (int i = 0; i < 3; i++) {
+      views[i]->update(data, file);
+    }
+    file << "</svg>\n</body>\n</html>" << std::endl;
+  }
+};
+
+class Controller {
+private:
+  Model* model;
+  std::fstream& file;
+  std::fstream& file_out;
+  std::list<double> data;
+  std::string& name;
+public:
+  Controller(std::fstream& file, std::fstream& file_out, std::string& name) : file(file), file_out(file_out), name(name){
+    if (!file.is_open() || !file_out.is_open()) {
+      throw std::runtime_error("Failed to open files");
+    }
+    model = new Model();
+    
+  }
+  ~Controller() {
+    delete model;
+    data.clear();
+  }
+  void update() {
+    data.clear();
+    while (file.good()) {
+      double value;
+      file >> value;
+      data.push_back(value);
+    }
+    if(!data.empty()){
+      data.sort();
+      file_out.close(); 
+      file_out.open(name ,std::ios::out | std::ios::trunc);
+    model->update(data, file_out);
+    }
+    Sleep(10 * 1000 );
+    //update();
+  }
+};
+
 int main() {
-  _setmode(_fileno(stdout), _O_U16TEXT);
-  /*
-  IComponent* m[7] = { new Composite, new Composite,new Composite,new
-  Composite,new Leaf,new Leaf,new Leaf}; m[0]->add(m[1]); m[0]->add(m[2]);
-  m[1]->add(m[3]);
-  m[1]->add(m[6]);
-  m[4]->add(m[4]);
-  m[4]->add(m[5]);
-
-  m[0]->draw();*/
-
-  /*
-  Figure* m[9] = {new Circle, new Circle, new Rect, new Rect, new Rect, new
-  Rect, new Circle, new Circle, new Poligon}; m[0]->add(m[2]); m[2]->add(m[1]);
-  m[0]->add(m[3]);
-  m[0]->add(m[4]);
-  m[5]->add(m[0]);
-  m[6]->add(m[5]);
-  m[7]->add(m[6]);
-  m[8]->add(m[7]);
-
-  m[8]->draw(500, 500, 2000);*/
-
-  Math *m[4] = {new Brackets, new Devide, new Integral, new Brackets};
+  
+  //_setmode(_fileno(stdout), _O_U16TEXT);
+  /*Math *m[4] = {new Brackets, new Devide, new Integral, new Brackets};
   // m[0]->add(m[1]);
   // m[1]->add(m[2]);
 
@@ -458,7 +544,15 @@ int main() {
   m[0]->add(m[1]);
   m[0]->add(m[2]);
   m[0]->add(m[3]);
-  m[0]->draw(x, y, 3000);
+  m[0]->draw(x, y, 3000);*/
+
+
+  
+  std::fstream file1("C:/Users/night/VScode/LabForEpstein/file1.txt");
+  std::string out1 = "C:/Users/night/VScode/LabForEpstein/file_out1.html";
+  std::fstream file_out1(out1, std::ios::out | std::ios::trunc);
+  Controller c1(file1, file_out1, out1);
+  c1.update();
 }
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
