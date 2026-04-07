@@ -4,13 +4,14 @@
 
 #include <cstddef>
 #include <fcntl.h>
+#include <fstream>
 #include <io.h>
 #include <iostream>
 #include <list>
 #include <string>
-#include <fstream>
 #include <thread>
 #include <windows.h>
+
 
 class IComponent {
 public:
@@ -425,50 +426,121 @@ public:
 }
 }*/
 
-
-
-
-
 ////// lab2 //////
 class View {
 public:
-  virtual void update(std::list<double> data, std::fstream& file) = 0;
+  virtual void update(std::list<double> data, std::fstream &file) = 0;
   virtual ~View() = default;
 };
 
 class view1 : public View {
 public:
-  void update(std::list<double> data, std::fstream& file) override {
-    file<<"<title>Expenses</title>\n<g id=\"rowGroup\" transform=\"translate(0, 0)\" role=\"table\">\n<rect x=\"25\" y=\"27\" width=\"3000\" height=\"20\" fill=\"gainsboro\"/>\n<text x=\"30\" y=\"20\" font-size=\"18px\" font-weight=\"bold\" fill=\"crimson\" text-anchor=\"middle\" role=\"row\">\n";
+  void update(std::list<double> data, std::fstream &file) override {
+    file << "<title>Expenses</title>\n<g id=\"rowGroup\" "
+            "transform=\"translate(0, 0)\" role=\"table\">\n<rect x=\"25\" "
+            "y=\"27\" width=\"3000\" height=\"20\" fill=\"gainsboro\"/>\n<text "
+            "x=\"30\" y=\"20\" font-size=\"18px\" font-weight=\"bold\" "
+            "fill=\"crimson\" text-anchor=\"middle\" role=\"row\">\n";
     for (unsigned int i = 0; i < data.size(); i++) {
-      file<<"<tspan role=\"columnheader\" x=\""<< (i + 1) * 100 <<"\">" << (char)(i + 65) <<"</tspan>\n";
+      file << "<tspan role=\"columnheader\" x=\"" << (i + 1) * 100 << "\">"
+           << (char)(i + 65) << "</tspan>\n";
     }
-    file<<"</text>\n<text x=\"30\" y=\"42\" font-size=\"18px\" font-weight=\"bold\" fill=\"crimson\" text-anchor=\"middle\" role=\"row\">\n";
+    file << "</text>\n<text x=\"30\" y=\"42\" font-size=\"18px\" "
+            "font-weight=\"bold\" fill=\"crimson\" text-anchor=\"middle\" "
+            "role=\"row\">\n";
 
     int i = 1;
     for (auto it = data.begin(); it != data.end(); ++it, ++i) {
-      file<<"<tspan role=\"columnheader\" x=\""<< i * 100 <<"\">" << *it <<"</tspan>\n";
+      file << "<tspan role=\"columnheader\" x=\"" << i * 100 << "\">" << *it
+           << "</tspan>\n";
     }
   }
 };
 
 class view2 : public View {
 public:
-  void update(std::list<double> data, std::fstream& file) override {
-    std::cout << "view2: " << data.size() << std::endl;
+  void update(std::list<double> data, std::fstream &file) override {
+    file << "<title>Expenses</title> <!-- Ось Y с процентами (слева) -->\n<g "
+            "font-size=\"12\" fill=\"#333\">\n<text x=\"30\" "
+            "y=\"120\">100%</text>\n<text x=\"30\" y=\"160\">75%</text>\n<text "
+            "x=\"30\" y=\"200\">50%</text>\n<text x=\"30\" "
+            "y=\"240\">25%</text>\n<text x=\"30\" y=\"280\">0%</text>\n</g>\n";
+    file << "<!-- Линии горизонтальной сетки (опционально) -->\n<g "
+            "stroke=\"#ddd\" stroke-width=\"1\">\n<line x1=\"40\" y1=\"120\" "
+            "x2=\"3460\" y2=\"120\" />\n<line x1=\"40\" y1=\"160\" x2=\"3460\" "
+            "y2=\"160\" />\n<line x1=\"40\" y1=\"200\" x2=\"3460\" y2=\"200\" "
+            "/>\n<line x1=\"40\" y1=\"240\" x2=\"3460\" y2=\"240\" />\n<line "
+            "x1=\"40\" y1=\"280\" x2=\"3460\" y2=\"280\" />\n</g>\n";
+
+    int i = 1, x = 60;
+    file << "<!-- Столбцы -->\n<g fill=\"#4e79a7\">\n";
+    for (auto it = data.begin(); it != data.end(); ++it, ++i, x += 80) {
+      double height = 180 * (*it) / 100;
+      file << "<rect x=\"" << x << "\"  y=\"" << 280 - height
+           << "\"  width=\"60\" height=\"" << height << "\" />\n";
+    }
+    file << "</g>\n";
+
+    x = 90;
+    file << "<!-- Подписи категорий (снизу) -->\n<g font-size=\"12\" "
+            "fill=\"#333\" text-anchor=\"middle\">\n";
+    for (unsigned int i = 0; i < data.size(); i++, x += 80) {
+      file << "<text x=\"" << x << "\"  y=\"310\">" << (char)(i + 65)
+           << " </text>\n";
+    }
+    file << "</g>\n\n";
   }
 };
 
 class view3 : public View {
 public:
-  void update(std::list<double> data, std::fstream& file) override {
-    std::cout << "view3: " << data.size() << std::endl;
+  void update(std::list<double> data, std::fstream &file) override {
+    file << "<script>\nconst data = [\n";
+    double massiv[data.size()];
+    double max = 0;
+    int i = 0;
+
+    for (auto it = data.begin(); it != data.end(); ++it, i++) {
+      massiv[i] = *it;
+      max += *it;
+    }
+
+    int q = 1, w = 1, e = 1;
+    for (int j = 0; j < i; j++) {
+      file << "{value: " << massiv[j] / max;
+      file << ", color: '#" << q << q << w << w << e << e << "', label: '";
+
+      if (q == w && w == e)
+        q++;
+      else if (w == e)
+        w++;
+      else
+        e++;
+
+      file << (char)(j + 65) << "'}";
+      if (j != i - 1)
+        file << ",\n";
+      else
+        file << std::endl;
+    }
+    file << "];\nconst svg = document.getElementById('pie');\nconst cx = 150, "
+            "cy = 450, r = 120;\nlet sum = data.reduce((s, d) => s + d.value, "
+            "0);\nlet startAngle = -Math.PI / 2;\ndata.forEach((d, i) => "
+            "{\nconst angle = (d.value / sum) * 2 * Math.PI;\nconst endAngle = "
+            "startAngle + angle;\nconst x1 = cx + Math.cos(startAngle) * "
+            "r;\nconst y1 = cy + Math.sin(startAngle) * r;\nconst x2 = cx + "
+            "Math.cos(endAngle) * r;\nconst y2 = cy + Math.sin(endAngle) * "
+            "r;\nconst largeArc = angle > Math.PI ? 1 : 0;\nconst path = `M "
+            "${cx},${cy} L ${x1},${y1} A ${r},${r} 0 ${largeArc},1 ${x2},${y2} "
+            "Z`;\nsvg.innerHTML += `<path d=\"${path}\" "
+            "fill=\"${d.color}\"/>`;\nstartAngle = endAngle;\n});\n</script>\n";
   }
 };
 
 class Model {
 private:
-  View* views[3];
+  View *views[3];
+
 public:
   Model() {
     views[0] = new view1();
@@ -481,56 +553,69 @@ public:
     delete views[2];
   }
 
-  void update(std::list<double> data, std::fstream& file) {
+  void update(std::list<double> data, std::fstream &file) {
     file.clear();
     file.seekp(0);
-    file<<"<!DOCTYPE html>\n<html>\n<head>\n<title>SVG-графика</title>\n</head>\n<body><svg width=\"10000\" height=\"10000\">"<<std::endl;
-    for (int i = 0; i < 3; i++) {
+    file << "<!DOCTYPE "
+            "html>\n<html>\n<head>\n<title>SVG-графика</title>\n</"
+            "head>\n<body>\n<svg id=\"pie\" width=\"10000\" height=\"10000\">"
+         << std::endl;
+    for (int i = 1; i >= 0; i--) {
       views[i]->update(data, file);
     }
-    file << "</svg>\n</body>\n</html>" << std::endl;
+    file << "</svg>\n" << std::endl;
+    views[2]->update(data, file);
+    file << "</body>\n</html>" << std::endl;
   }
 };
 
 class Controller {
 private:
-  Model* model;
-  std::fstream& file;
-  std::fstream& file_out;
+  Model *model;
+  std::fstream file;
+  std::fstream file_out;
   std::list<double> data;
-  std::string& name;
+  std::string &in;
+  std::string &out;
+
 public:
-  Controller(std::fstream& file, std::fstream& file_out, std::string& name) : file(file), file_out(file_out), name(name){
+  Controller(std::string &in, std::string &out) : in(in), out(out) {
+    file.open(in, std::ios::in | std::ios::out | std::ios::app);
+    file_out.open(out, std::ios::out | std::ios::trunc);
     if (!file.is_open() || !file_out.is_open()) {
       throw std::runtime_error("Failed to open files");
     }
     model = new Model();
-    
+    file.close();
   }
+
   ~Controller() {
     delete model;
     data.clear();
   }
+  
   void update() {
+    std::cout << "draw..." << std::endl;
     data.clear();
-    while (file.good()) {
-      double value;
-      file >> value;
+    file.open(in, std::ios::in | std::ios::out | std::ios::app);
+    double value;
+    while (file >> value) {
       data.push_back(value);
     }
-    if(!data.empty()){
+    file.close();
+    if (!data.empty()) {
       data.sort();
-      file_out.close(); 
-      file_out.open(name ,std::ios::out | std::ios::trunc);
-    model->update(data, file_out);
+      file_out.close();
+      file_out.open(out, std::ios::out | std::ios::trunc);
+      model->update(data, file_out);
     }
-    Sleep(10 * 1000 );
-    //update();
+    Sleep(10 * 1000);
+    update();
   }
 };
 
 int main() {
-  
+
   //_setmode(_fileno(stdout), _O_U16TEXT);
   /*Math *m[4] = {new Brackets, new Devide, new Integral, new Brackets};
   // m[0]->add(m[1]);
@@ -546,12 +631,9 @@ int main() {
   m[0]->add(m[3]);
   m[0]->draw(x, y, 3000);*/
 
-
-  
-  std::fstream file1("C:/Users/night/VScode/LabForEpstein/file1.txt");
-  std::string out1 = "C:/Users/night/VScode/LabForEpstein/file_out1.html";
-  std::fstream file_out1(out1, std::ios::out | std::ios::trunc);
-  Controller c1(file1, file_out1, out1);
+  std::string in1 = "C:/Users/lllnightlll/vscode/LabForEpstein/file1.txt";
+  std::string out1 = "C:/Users/lllnightlll/vscode/LabForEpstein/file_out1.html";
+  Controller c1(in1, out1);
   c1.update();
 }
 
