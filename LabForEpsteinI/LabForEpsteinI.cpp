@@ -433,12 +433,26 @@ public:
   virtual ~View() = default;
 };
 
+class Decorator {
+private: 
+  int x, y, height, width;
+public:
+  Decorator (int x, int y, int height, int width) : x(x), y(y), height(height), width(width) {
+    draw();
+  }
+
+  std::string draw () {
+    std::string z = ("<rect x=\"" + std::to_string(this -> x) + "\" y=\"" + std::to_string(this -> y) + "\" width=\"" + std::to_string(this -> width) + "\" height=\"" + std::to_string(this -> height) + "\" fill=\"none\" stroke=\"blue\" stroke-width=\"1\" />");
+    return z;
+  }
+};
+
 class view1 : public View {
 public:
   void update(std::list<double> data, std::fstream &file) override {
     file << "<title>Expenses</title>\n<g id=\"rowGroup\" "
-            "transform=\"translate(0, 0)\" role=\"table\">\n<rect x=\"25\" "
-            "y=\"27\" width=\"3000\" height=\"20\" fill=\"gainsboro\"/>\n<text "
+            "transform=\"translate(0, 0)\" role=\"table\">\n<rect x=\"50\" "
+            "y=\"27\" width=\"" << data.size() * 100 << "\" height=\"20\" fill=\"gainsboro\"/>\n<text "
             "x=\"30\" y=\"20\" font-size=\"18px\" font-weight=\"bold\" "
             "fill=\"crimson\" text-anchor=\"middle\" role=\"row\">\n";
     for (unsigned int i = 0; i < data.size(); i++) {
@@ -454,12 +468,15 @@ public:
       file << "<tspan role=\"columnheader\" x=\"" << i * 100 << "\">" << *it
            << "</tspan>\n";
     }
+    file << std::endl << "</text>";
+    file << Decorator(30, 5, 50, data.size()*100 + 40).draw() << std::endl;
   }
 };
 
 class view2 : public View {
 public:
   void update(std::list<double> data, std::fstream &file) override {
+    int lenght = data.size() * 80 + 60;
     file << "<title>Expenses</title> <!-- Ось Y с процентами (слева) -->\n<g "
             "font-size=\"12\" fill=\"#333\">\n<text x=\"30\" "
             "y=\"120\">100%</text>\n<text x=\"30\" y=\"160\">75%</text>\n<text "
@@ -467,10 +484,10 @@ public:
             "y=\"240\">25%</text>\n<text x=\"30\" y=\"280\">0%</text>\n</g>\n";
     file << "<!-- Линии горизонтальной сетки (опционально) -->\n<g "
             "stroke=\"#ddd\" stroke-width=\"1\">\n<line x1=\"40\" y1=\"120\" "
-            "x2=\"3460\" y2=\"120\" />\n<line x1=\"40\" y1=\"160\" x2=\"3460\" "
-            "y2=\"160\" />\n<line x1=\"40\" y1=\"200\" x2=\"3460\" y2=\"200\" "
-            "/>\n<line x1=\"40\" y1=\"240\" x2=\"3460\" y2=\"240\" />\n<line "
-            "x1=\"40\" y1=\"280\" x2=\"3460\" y2=\"280\" />\n</g>\n";
+            "x2=\"" << lenght << "\" y2=\"120\" />\n<line x1=\"40\" y1=\"160\" x2=\"" << lenght << "\" "
+            "y2=\"160\" />\n<line x1=\"40\" y1=\"200\" x2=\"" << lenght << "\" y2=\"200\" "
+            "/>\n<line x1=\"40\" y1=\"240\" x2=\"" << lenght << "\" y2=\"240\" />\n<line "
+            "x1=\"40\" y1=\"280\" x2=\"" << lenght << "\" y2=\"280\" />\n</g>\n";
 
     int i = 1, x = 60;
     file << "<!-- Столбцы -->\n<g fill=\"#4e79a7\">\n";
@@ -489,12 +506,14 @@ public:
            << " </text>\n";
     }
     file << "</g>\n\n";
+    file << Decorator(20, 100, 220, lenght + 40).draw() << std::endl;
   }
 };
 
 class view3 : public View {
 public:
   void update(std::list<double> data, std::fstream &file) override {
+    file << Decorator(20, 320, 240+20, 240+20).draw() << std::endl << "</svg>\n" << std::endl;
     file << "<script>\nconst data = [\n";
     double massiv[data.size()];
     double max = 0;
@@ -563,7 +582,6 @@ public:
     for (int i = 1; i >= 0; i--) {
       views[i]->update(data, file);
     }
-    file << "</svg>\n" << std::endl;
     views[2]->update(data, file);
     file << "</body>\n</html>" << std::endl;
   }
