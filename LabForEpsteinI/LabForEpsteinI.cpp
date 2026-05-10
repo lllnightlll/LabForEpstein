@@ -8,10 +8,12 @@
 #include <io.h>
 #include <iostream>
 #include <list>
+#include <memory>
+#include <random>
 #include <string>
 #include <thread>
+#include <vector>
 #include <windows.h>
-
 
 class IComponent {
 public:
@@ -38,10 +40,46 @@ class Leaf : public IComponent {
   virtual void draw() { std::cout << "hello"; }
 };
 
+///// Style Figure //////
+struct Style {
+  std::string colour;
+  std::string lineType;
+  int widthLine;
+};
+
+///// Style range /////
+struct StyleRange {
+  int fromId;
+  int toId;
+  Style style;
+};
+
+/////  Context /////
+class Context {
+  std::vector<StyleRange> ranges;
+
+public:
+  Context() {
+    ranges.push_back({1, 200, {"green", "solid", 3}});
+    ranges.push_back({201, 500, {"orange", "dash", 2}});
+    ranges.push_back({501, 900, {"blue", "dot", 4}});
+  }
+
+  Style getStyle(int id) const {
+    for (const auto &r : ranges) {
+      if (id >= r.fromId && id <= r.toId)
+        return r.style;
+    }
+    return {"gray", "solid", 1};
+  }
+};
+
 ///// General Figure /////
 class Figure {
 public:
-  std::list<Figure *> li;
+  virtual ~Figure() = default;
+  virtual void Draw(Context *c, int x, int y, int id) = 0;
+  /*std::list<Figure *> li;
   double relX = 0.5, relY = 0.5, relSize = 0.5;
   int widthLine = 3;
   std::string colour = "green";
@@ -74,34 +112,50 @@ public:
     }
   }
 
-  virtual void drawSelf(double cx, double cy, double size) = 0;
+  virtual void drawSelf(double cx, double cy, double size) = 0;*/
 };
 
 ////// ====== //////
 class Circle : public Figure {
 public:
-  void drawSelf(double cx, double cy, double size) {
+  /*void drawSelf(double cx, double cy, double size) {
     double r = size / 2;
     std::cout << "<circle cx=\"" << cx << "\" cy=\"" << cy << "\" r=\"" << r
               << "\" fill=\"" << colour << "\" stroke-width=\"" << widthLine
               << "\" stroke=\"rgb(0,0,0)\" />\n";
+  }*/
+  void Draw(Context *c, int x, int y, int id) override {
+    Style st = c->getStyle(id);
+
+    std::cout << "<circle cx=\"" << x << "\" cy=\"" << y
+              << "\" r=\"10\" fill=\"" << st.colour
+              << "\" stroke=\"black\" stroke-width=\"" << st.widthLine
+              << "\" />\n";
   }
 };
 
 ////// ====== //////
 class Rect : public Figure {
-  void drawSelf(double cx, double cy, double size) {
+  /*void drawSelf(double cx, double cy, double size) {
     double h = size / 2;
     std::cout << "<rect x=\"" << cx - h << "\" y=\"" << cy - h << "\" width=\""
               << size << "\" height=\"" << size << "\" fill=\"" << colour
               << "\" stroke-width=\"" << widthLine
               << "\" stroke=\"rgb(0,0,0)\" />\n";
+  }*/
+  void Draw(Context *c, int x, int y, int id) override {
+    Style st = c->getStyle(id);
+
+    std::cout << "<rect x=\"" << x - 10 << "\" y=\"" << y - 10
+              << "\" width=\"20\" height=\"20\" fill=\"" << st.colour
+              << "\" stroke=\"black\" stroke-width=\"" << st.widthLine
+              << "\" />\n";
   }
 };
 
 ////// ====== //////
 class Poligon : public Figure {
-  void drawSelf(double cx, double cy, double size) override {
+  /*void drawSelf(double cx, double cy, double size) override {
     double h = size / 2.0;
 
     double x1 = cx - h * 1.2;
@@ -117,6 +171,14 @@ class Poligon : public Figure {
               << y2 << " " << x3 << "," << y3 << "\" fill=\"" << colour
               << "\" stroke-width=\"" << widthLine
               << "\" stroke=\"rgb(0,0,0)\" />\n";
+  }*/
+  void Draw(Context *c, int x, int y, int id) override {
+    Style st = c->getStyle(id);
+
+    std::cout << "<polygon points=\"" << x << "," << y - 12 << " " << x - 12
+              << "," << y + 10 << " " << x + 12 << "," << y + 10 << "\" fill=\""
+              << st.colour << "\" stroke=\"black\" stroke-width=\""
+              << st.widthLine << "\" />\n";
   }
 };
 
@@ -434,15 +496,21 @@ public:
 };
 
 class Decorator {
-private: 
+private:
   int x, y, height, width;
+
 public:
-  Decorator (int x, int y, int height, int width) : x(x), y(y), height(height), width(width) {
+  Decorator(int x, int y, int height, int width)
+      : x(x), y(y), height(height), width(width) {
     draw();
   }
 
-  std::string draw () {
-    std::string z = ("<rect x=\"" + std::to_string(this -> x) + "\" y=\"" + std::to_string(this -> y) + "\" width=\"" + std::to_string(this -> width) + "\" height=\"" + std::to_string(this -> height) + "\" fill=\"none\" stroke=\"blue\" stroke-width=\"1\" />");
+  std::string draw() {
+    std::string z =
+        ("<rect x=\"" + std::to_string(this->x) + "\" y=\"" +
+         std::to_string(this->y) + "\" width=\"" + std::to_string(this->width) +
+         "\" height=\"" + std::to_string(this->height) +
+         "\" fill=\"none\" stroke=\"blue\" stroke-width=\"1\" />");
     return z;
   }
 };
@@ -452,7 +520,9 @@ public:
   void update(std::list<double> data, std::fstream &file) override {
     file << "<title>Expenses</title>\n<g id=\"rowGroup\" "
             "transform=\"translate(0, 0)\" role=\"table\">\n<rect x=\"50\" "
-            "y=\"27\" width=\"" << data.size() * 100 << "\" height=\"20\" fill=\"gainsboro\"/>\n<text "
+            "y=\"27\" width=\""
+         << data.size() * 100
+         << "\" height=\"20\" fill=\"gainsboro\"/>\n<text "
             "x=\"30\" y=\"20\" font-size=\"18px\" font-weight=\"bold\" "
             "fill=\"crimson\" text-anchor=\"middle\" role=\"row\">\n";
     for (unsigned int i = 0; i < data.size(); i++) {
@@ -469,7 +539,7 @@ public:
            << "</tspan>\n";
     }
     file << std::endl << "</text>";
-    file << Decorator(30, 5, 50, data.size()*100 + 40).draw() << std::endl;
+    file << Decorator(30, 5, 50, data.size() * 100 + 40).draw() << std::endl;
   }
 };
 
@@ -484,10 +554,18 @@ public:
             "y=\"240\">25%</text>\n<text x=\"30\" y=\"280\">0%</text>\n</g>\n";
     file << "<!-- Линии горизонтальной сетки (опционально) -->\n<g "
             "stroke=\"#ddd\" stroke-width=\"1\">\n<line x1=\"40\" y1=\"120\" "
-            "x2=\"" << lenght << "\" y2=\"120\" />\n<line x1=\"40\" y1=\"160\" x2=\"" << lenght << "\" "
-            "y2=\"160\" />\n<line x1=\"40\" y1=\"200\" x2=\"" << lenght << "\" y2=\"200\" "
-            "/>\n<line x1=\"40\" y1=\"240\" x2=\"" << lenght << "\" y2=\"240\" />\n<line "
-            "x1=\"40\" y1=\"280\" x2=\"" << lenght << "\" y2=\"280\" />\n</g>\n";
+            "x2=\""
+         << lenght << "\" y2=\"120\" />\n<line x1=\"40\" y1=\"160\" x2=\""
+         << lenght
+         << "\" "
+            "y2=\"160\" />\n<line x1=\"40\" y1=\"200\" x2=\""
+         << lenght
+         << "\" y2=\"200\" "
+            "/>\n<line x1=\"40\" y1=\"240\" x2=\""
+         << lenght
+         << "\" y2=\"240\" />\n<line "
+            "x1=\"40\" y1=\"280\" x2=\""
+         << lenght << "\" y2=\"280\" />\n</g>\n";
 
     int i = 1, x = 60;
     file << "<!-- Столбцы -->\n<g fill=\"#4e79a7\">\n";
@@ -513,7 +591,9 @@ public:
 class view3 : public View {
 public:
   void update(std::list<double> data, std::fstream &file) override {
-    file << Decorator(20, 320, 240+20, 240+20).draw() << std::endl << "</svg>\n" << std::endl;
+    file << Decorator(20, 320, 240 + 20, 240 + 20).draw() << std::endl
+         << "</svg>\n"
+         << std::endl;
     file << "<script>\nconst data = [\n";
     double massiv[data.size()];
     double max = 0;
@@ -611,7 +691,7 @@ public:
     delete model;
     data.clear();
   }
-  
+
   void update() {
     std::cout << "draw..." << std::endl;
     data.clear();
@@ -649,10 +729,32 @@ int main() {
   m[0]->add(m[3]);
   m[0]->draw(x, y, 3000);*/
 
-  std::string in1 = "C:/Users/lllnightlll/vscode/LabForEpstein/file1.txt";
+  /*std::string in1 = "C:/Users/lllnightlll/vscode/LabForEpstein/file1.txt";
   std::string out1 = "C:/Users/lllnightlll/vscode/LabForEpstein/file_out1.html";
   Controller c1(in1, out1);
-  c1.update();
+  c1.update();*/
+
+  Context ctx;
+
+    std::vector<std::unique_ptr<Figure>> pool;
+    pool.emplace_back(std::make_unique<Circle>());
+    pool.emplace_back(std::make_unique<Rect>());
+    pool.emplace_back(std::make_unique<Poligon>());
+
+    std::mt19937 rng(42);
+    std::uniform_int_distribution<int> typeDist(0, (int)pool.size() - 1);
+    std::uniform_int_distribution<int> idDist(1, 900);
+
+    int cell = 28;
+
+    std::cout << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"900\" height=\"900\">\n";
+    for (int r = 0; r < 30; ++r) {
+        for (int col = 0; col < 30; ++col) {
+            int id = idDist(rng);
+            pool[typeDist(rng)]->Draw(&ctx, 20 + col * cell, 20 + r * cell, id);
+        }
+    }
+    std::cout << "</svg>\n";
 }
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
