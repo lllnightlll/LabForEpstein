@@ -40,6 +40,15 @@ class Leaf : public IComponent {
   virtual void draw() { std::cout << "hello"; }
 };
 
+
+
+
+
+const std::string FIGURE_FILE =
+    ("C:/Users/lllnightlll/vscode/LabForEpstein/figure.html");
+std::fstream file_figure(FIGURE_FILE, std::ios::in | std::ios::out |
+                                          std::ios::app | std::ios::trunc);
+
 ///// Style Figure //////
 struct Style {
   std::string colour;
@@ -52,23 +61,52 @@ struct StyleRange {
   int fromId;
   int toId;
   Style style;
+  std::unique_ptr<class Context> subContext;
+
+  bool contains(int from, int to) const { return from >= fromId && to <= toId; }
+
+  bool containsId(int id) const { return id >= fromId && id <= toId; }
 };
+
+std::string dashFromLineType(const std::string &type) {
+  if (type == "solid")
+    return "";
+  if (type == "dash")
+    return "10,5";
+  if (type == "dot")
+    return "2,4";
+  return "";
+}
 
 /////  Context /////
 class Context {
   std::vector<StyleRange> ranges;
 
 public:
-  Context() {
-    ranges.push_back({1, 200, {"green", "solid", 3}});
-    ranges.push_back({201, 500, {"orange", "dash", 2}});
-    ranges.push_back({501, 900, {"blue", "dot", 4}});
+  Context() {};
+  void addStyle(int fromId, int toId, Style style) {
+    for (auto &r : ranges) {
+      if (r.contains(fromId, toId)) {
+        if (!r.subContext) {
+          r.subContext = std::make_unique<Context>();
+        }
+        r.subContext->addStyle(fromId, toId, style);
+        return;
+      }
+    }
+    ranges.push_back({fromId, toId, style, nullptr});
   }
 
   Style getStyle(int id) const {
     for (const auto &r : ranges) {
-      if (id >= r.fromId && id <= r.toId)
+      if (r.containsId(id)) {
+        if (r.subContext) {
+          Style nested = r.subContext->getStyle(id);
+          if (nested.colour != "gray")
+            return nested;
+        }
         return r.style;
+      }
     }
     return {"gray", "solid", 1};
   }
@@ -126,11 +164,24 @@ public:
   }*/
   void Draw(Context *c, int x, int y, int id) override {
     Style st = c->getStyle(id);
+    std::string dash = dashFromLineType(st.lineType);
 
     std::cout << "<circle cx=\"" << x << "\" cy=\"" << y
               << "\" r=\"10\" fill=\"" << st.colour
-              << "\" stroke=\"black\" stroke-width=\"" << st.widthLine
-              << "\" />\n";
+              << "\" stroke=\"black\" stroke-width=\"" << st.widthLine << "\"";
+    if (!dash.empty()) {
+      std::cout << " stroke-dasharray=\"" << dash << "\"";
+    }
+    std::cout << " />\n";
+
+    file_figure << "<circle cx=\"" << x << "\" cy=\"" << y
+                << "\" r=\"10\" fill=\"" << st.colour
+                << "\" stroke=\"black\" stroke-width=\"" << st.widthLine
+                << "\"";
+    if (!dash.empty()) {
+      file_figure << " stroke-dasharray=\"" << dash << "\"";
+    }
+    file_figure << " />\n";
   }
 };
 
@@ -145,11 +196,24 @@ class Rect : public Figure {
   }*/
   void Draw(Context *c, int x, int y, int id) override {
     Style st = c->getStyle(id);
+    std::string dash = dashFromLineType(st.lineType);
 
     std::cout << "<rect x=\"" << x - 10 << "\" y=\"" << y - 10
               << "\" width=\"20\" height=\"20\" fill=\"" << st.colour
-              << "\" stroke=\"black\" stroke-width=\"" << st.widthLine
-              << "\" />\n";
+              << "\" stroke=\"black\" stroke-width=\"" << st.widthLine << "\"";
+    if (!dash.empty()) {
+      std::cout << " stroke-dasharray=\"" << dash << "\"";
+    }
+    std::cout << " />\n";
+
+    file_figure << "<rect x=\"" << x - 10 << "\" y=\"" << y - 10
+                << "\" width=\"20\" height=\"20\" fill=\"" << st.colour
+                << "\" stroke=\"black\" stroke-width=\"" << st.widthLine
+                << "\"";
+    if (!dash.empty()) {
+      file_figure << " stroke-dasharray=\"" << dash << "\"";
+    }
+    file_figure << " />\n";
   }
 };
 
@@ -174,11 +238,26 @@ class Poligon : public Figure {
   }*/
   void Draw(Context *c, int x, int y, int id) override {
     Style st = c->getStyle(id);
+    std::string dash = dashFromLineType(st.lineType);
 
     std::cout << "<polygon points=\"" << x << "," << y - 12 << " " << x - 12
               << "," << y + 10 << " " << x + 12 << "," << y + 10 << "\" fill=\""
               << st.colour << "\" stroke=\"black\" stroke-width=\""
-              << st.widthLine << "\" />\n";
+              << st.widthLine << "\"";
+    if (!dash.empty()) {
+      std::cout << " stroke-dasharray=\"" << dash << "\"";
+    }
+    std::cout << " />\n";
+
+    file_figure << "<polygon points=\"" << x << "," << y - 12 << " " << x - 12
+                << "," << y + 10 << " " << x + 12 << "," << y + 10
+                << "\" fill=\"" << st.colour
+                << "\" stroke=\"black\" stroke-width=\"" << st.widthLine
+                << "\"";
+    if (!dash.empty()) {
+      file_figure << " stroke-dasharray=\"" << dash << "\"";
+    }
+    file_figure << " />\n";
   }
 };
 
@@ -735,26 +814,34 @@ int main() {
   c1.update();*/
 
   Context ctx;
+  ctx.addStyle(1, 200, Style{"green", "solid", 3});
+  ctx.addStyle(201, 500, Style{"orange", "dash", 2});
+  ctx.addStyle(501, 900, Style{"blue", "dot", 4});
+  ctx.addStyle(100, 150, Style{"black", "dash", 5});
 
-    std::vector<std::unique_ptr<Figure>> pool;
-    pool.emplace_back(std::make_unique<Circle>());
-    pool.emplace_back(std::make_unique<Rect>());
-    pool.emplace_back(std::make_unique<Poligon>());
+  std::vector<std::unique_ptr<Figure>> pool;
+  pool.emplace_back(std::make_unique<Circle>());
+  pool.emplace_back(std::make_unique<Rect>());
+  pool.emplace_back(std::make_unique<Poligon>());
 
-    std::mt19937 rng(42);
-    std::uniform_int_distribution<int> typeDist(0, (int)pool.size() - 1);
-    std::uniform_int_distribution<int> idDist(1, 900);
+  std::mt19937 rng(42);
+  std::uniform_int_distribution<int> typeDist(0, (int)pool.size() - 1);
+  std::uniform_int_distribution<int> idDist(1, 900);
 
-    int cell = 28;
-
-    std::cout << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"900\" height=\"900\">\n";
-    for (int r = 0; r < 30; ++r) {
-        for (int col = 0; col < 30; ++col) {
-            int id = idDist(rng);
-            pool[typeDist(rng)]->Draw(&ctx, 20 + col * cell, 20 + r * cell, id);
-        }
+  int cell = 28;
+  std::cout << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"900\" "
+               "height=\"900\">\n";
+  file_figure << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"900\" "
+                 "height=\"900\">\n";
+  for (int r = 0; r < 30; ++r) {
+    for (int col = 0; col < 30; ++col) {
+      int id = idDist(rng);
+      pool[typeDist(rng)]->Draw(&ctx, 20 + col * cell, 20 + r * cell, id);
     }
-    std::cout << "</svg>\n";
+  }
+  std::cout << "</svg>\n";
+  file_figure << "</svg>\n";
+  file_figure.close();
 }
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
